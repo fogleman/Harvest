@@ -1,6 +1,12 @@
 from math import sin, cos, pi, atan2, hypot
 import random
 
+def normalize(point):
+    x, y = point
+    x = int(round(x))
+    y = int(round(y))
+    return (x, y)
+
 class Gem(object):
     # position
     # radius
@@ -17,7 +23,7 @@ class Bot(object):
     def __init__(self, position, target):
         self.position = position
         self.target = target
-        self.padding = 0.333
+        self.padding = 0.3
         self.speed = 2.0
 
 class Grid(object):
@@ -105,7 +111,10 @@ class Grid(object):
             key=lambda x: self.get_distance(x, b))
     def get_angle(self, a, b):
         try:
-            n = self.get_neighbor((int(round(a[0])), int(round(a[1]))), b)
+            if normalize(a) == b:
+                n = b
+            else:
+                n = self.get_neighbor(normalize(a), b)
             return atan2(n[1] - a[1], n[0] - a[0])
         except Exception:
             return 0 # TODO
@@ -117,7 +126,7 @@ class Model(object):
             self.grid.toggle_wall(self.grid.random_empty())
         self.reset()
     def reset(self):
-        self.bots = self.create_bots(100)
+        self.bots = self.create_bots(2)
     def update(self, t, dt):
         m = 1
         for i in range(m):
@@ -135,6 +144,7 @@ class Model(object):
         angle = self.grid.get_angle(bot.position, bot.target)
         dx = cos(angle)
         dy = sin(angle)
+        # bots
         for other in self.bots:
             if other == bot:
                 continue
@@ -144,11 +154,34 @@ class Model(object):
             if ox > 5 or oy > 5:
                 continue
             d = hypot(ox, oy) ** 2
-            d = max(d, 0.001)
+            # d = max(d, 0.001)
             p = other.padding ** 2
             angle = atan2(py - y, px - x)
             dx += cos(angle) / d * p
             dy += sin(angle) / d * p
+        # walls
+        pad = 0.1
+        for nx in range(-1, 2):
+            for ny in range(-1, 2):
+                if nx == 0 and ny == 0:
+                    continue
+                n = normalize((px + nx, py + ny))
+                if self.grid.empty(n):
+                    continue
+                n = (n[0] + 0.5, n[1] + 0.5)
+
+                # dx = max(abs(px - n[0]) - 0.5, 0);
+                # dy = max(abs(py - n[1]) - 0.5, 0);
+                # return dx * dx + dy * dy;
+
+                d = 0.00001
+                d = max(d, abs(px - n[0]) - 0.5 - pad)
+                d = max(d, abs(py - n[1]) - 0.5 - pad)
+                d = d ** 2
+                p = 0.1 ** 2
+                angle = atan2(py - n[1], px - n[0])
+                dx += cos(angle) / d * p
+                dy += sin(angle) / d * p
         angle = atan2(dy, dx)
         magnitude = hypot(dx, dy)
         return angle, magnitude
@@ -161,17 +194,16 @@ class Model(object):
             px, py = bot.position
             tx, ty = bot.target
             bot.position = (px + dx, py + dy)
-            if hypot(px - tx, py - ty) < 0.5:
+            if hypot(px - tx, py - ty) < 0.25:
                 bot.target = self.grid.random_empty()
-        pad = 0.2
-        for bot in self.bots:
-            x, y = bot.position
-            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                px = int(round(x + dx * pad))
-                py = int(round(y + dy * pad))
-                if not self.grid.empty((px, py)):
-                    if dx:
-                        x = px - (0.5 + pad) * dx
-                    if dy:
-                        y = py - (0.5 + pad) * dy
-            bot.position = (x, y)
+        # pad = 0.2
+        # for bot in self.bots:
+        #     x, y = bot.position
+        #     for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        #         px, py = normalize((x + dx * pad, y + dy * pad))
+        #         if not self.grid.empty((px, py)):
+        #             if dx:
+        #                 x = px - (0.5 + pad) * dx
+        #             if dy:
+        #                 y = py - (0.5 + pad) * dy
+        #     bot.position = (x, y)

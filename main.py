@@ -89,6 +89,8 @@ class View(wx.Panel):
         for bot in self.model.bots:
             sx, sy = self.to_screen(*bot.position)
             dc.DrawCircle(sx + size / 2, sy + size / 2, size / 8)
+            # sx, sy = self.to_screen(*bot.target)
+            # dc.DrawCircle(sx + size / 2, sy + size / 2, size / 16)
 
 class Frame(wx.Frame):
     def __init__(self):
