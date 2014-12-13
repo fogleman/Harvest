@@ -134,7 +134,7 @@ class Model(object):
     def reset(self):
         self.bots = self.create_bots(100)
     def update(self, t, dt):
-        m = 1
+        m = 2
         for i in range(m):
             self.update_bots(dt / m)
     def create_bots(self, count):
@@ -157,7 +157,7 @@ class Model(object):
             x, y = other.position
             ox = abs(px - x)
             oy = abs(py - y)
-            if ox > 3 or oy > 3:
+            if ox > 2 or oy > 2:
                 continue
             d = hypot(ox, oy) ** 2
             p = other.padding ** 2
@@ -169,10 +169,11 @@ class Model(object):
             x, y = wall
             ox = abs(px - x)
             oy = abs(py - y)
-            if ox > 3 or oy > 3:
+            if ox > 2 or oy > 2:
                 continue
-            d = hypot(ox, oy) ** 2
-            p = 0.6 ** 2
+            # d = hypot(ox, oy) ** 2
+            d = wall_bot_distance(wall, bot.position) or 0.0001
+            p = 0.4 ** 2
             angle = atan2(py - y, px - x)
             dx += cos(angle) / d * p
             dy += sin(angle) / d * p
@@ -190,3 +191,10 @@ class Model(object):
             bot.position = (px + dx, py + dy)
             if hypot(px - tx, py - ty) < 0.25:
                 bot.target = self.grid.random_empty()
+
+def wall_bot_distance(wall, bot):
+    px, py = bot
+    x, y = wall
+    dx = max(abs(px - x) - 0.5, 0)
+    dy = max(abs(py - y) - 0.5, 0)
+    return hypot(dx, dy)
