@@ -30,6 +30,12 @@ class Grid(object):
     def __init__(self, size):
         self.size = size
         self.walls = set()
+        for x in range(self.width):
+            self.add_wall((x, 0))
+            self.add_wall((x, self.height - 1))
+        for y in range(self.height):
+            self.add_wall((0, y))
+            self.add_wall((self.width - 1, y))
         self.clear_caches()
     @property
     def width(self):
@@ -121,12 +127,12 @@ class Grid(object):
 
 class Model(object):
     def __init__(self):
-        self.grid = Grid((16, 16))
+        self.grid = Grid((18, 18))
         for i in range(50):
             self.grid.toggle_wall(self.grid.random_empty())
         self.reset()
     def reset(self):
-        self.bots = self.create_bots(2)
+        self.bots = self.create_bots(100)
     def update(self, t, dt):
         m = 1
         for i in range(m):
@@ -151,44 +157,32 @@ class Model(object):
             x, y = other.position
             ox = abs(px - x)
             oy = abs(py - y)
-            if ox > 5 or oy > 5:
+            if ox > 3 or oy > 3:
                 continue
             d = hypot(ox, oy) ** 2
-            # d = max(d, 0.001)
             p = other.padding ** 2
             angle = atan2(py - y, px - x)
             dx += cos(angle) / d * p
             dy += sin(angle) / d * p
         # walls
-        pad = 0.1
-        for nx in range(-1, 2):
-            for ny in range(-1, 2):
-                if nx == 0 and ny == 0:
-                    continue
-                n = normalize((px + nx, py + ny))
-                if self.grid.empty(n):
-                    continue
-                n = (n[0] + 0.5, n[1] + 0.5)
-
-                # dx = max(abs(px - n[0]) - 0.5, 0);
-                # dy = max(abs(py - n[1]) - 0.5, 0);
-                # return dx * dx + dy * dy;
-
-                d = 0.00001
-                d = max(d, abs(px - n[0]) - 0.5 - pad)
-                d = max(d, abs(py - n[1]) - 0.5 - pad)
-                d = d ** 2
-                p = 0.1 ** 2
-                angle = atan2(py - n[1], px - n[0])
-                dx += cos(angle) / d * p
-                dy += sin(angle) / d * p
+        for wall in self.grid.walls:
+            x, y = wall
+            ox = abs(px - x)
+            oy = abs(py - y)
+            if ox > 3 or oy > 3:
+                continue
+            d = hypot(ox, oy) ** 2
+            p = 0.6 ** 2
+            angle = atan2(py - y, px - x)
+            dx += cos(angle) / d * p
+            dy += sin(angle) / d * p
         angle = atan2(dy, dx)
         magnitude = hypot(dx, dy)
         return angle, magnitude
     def update_bots(self, dt):
         data = [self.update_bot(bot) for bot in self.bots]
         for bot, (angle, magnitude) in zip(self.bots, data):
-            speed = min(1, 0.2 + magnitude * 0.8)
+            speed = min(1, magnitude)#0.2 + magnitude * 0.8)
             dx = cos(angle) * dt * bot.speed * speed
             dy = sin(angle) * dt * bot.speed * speed
             px, py = bot.position
@@ -196,14 +190,3 @@ class Model(object):
             bot.position = (px + dx, py + dy)
             if hypot(px - tx, py - ty) < 0.25:
                 bot.target = self.grid.random_empty()
-        # pad = 0.2
-        # for bot in self.bots:
-        #     x, y = bot.position
-        #     for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-        #         px, py = normalize((x + dx * pad, y + dy * pad))
-        #         if not self.grid.empty((px, py)):
-        #             if dx:
-        #                 x = px - (0.5 + pad) * dx
-        #             if dy:
-        #                 y = py - (0.5 + pad) * dy
-        #     bot.position = (x, y)
