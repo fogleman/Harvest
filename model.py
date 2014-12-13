@@ -23,8 +23,8 @@ class Bot(object):
     def __init__(self, position, target):
         self.position = position
         self.target = target
-        self.padding = 0.3
-        self.speed = 2.0
+        self.padding = 0.3 + random.random() * 0.1
+        self.speed = 1.5 + random.random()
 
 class Grid(object):
     def __init__(self, size):

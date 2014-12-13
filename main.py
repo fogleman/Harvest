@@ -71,13 +71,14 @@ class View(wx.Panel):
     def draw_grid(self, dc):
         grid = self.model.grid
         size = self.metrics[0]
-        dc.SetPen(wx.Pen(wx.Colour(221, 221, 221)))
         for y in range(grid.height):
             for x in range(grid.width):
                 sx, sy = self.to_screen(x, y)
                 if grid.has_wall((x, y)):
+                    dc.SetPen(wx.BLACK_PEN)
                     dc.SetBrush(wx.BLACK_BRUSH)
                 else:
+                    dc.SetPen(wx.Pen(wx.Colour(221, 221, 221)))
                     dc.SetBrush(wx.WHITE_BRUSH)
                 dc.DrawRectangle(sx, sy, size + 1, size + 1)
                 # d = grid.get_distance(self.hover, (x, y))
